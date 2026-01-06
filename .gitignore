@@ -1,0 +1,4 @@
+*.txt
+*.zip
+!README.txt
+.DS_Store
