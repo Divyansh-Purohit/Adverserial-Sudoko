@@ -288,6 +288,3 @@ Building this Competitive Sudoku AI demonstrates how classical game-playing algo
 │  └─────────────────────────────────────────────────────────────────────┘    │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
-
-
-Understanding these techniques individually and how they interact is essential not just for this assignment but for any game-playing AI. The same principles apply to chess, checkers, Go, and countless other games. The specific details change, but the fundamental ideas of searching game trees, pruning unpromising branches, managing time, and evaluating positions remain constant across all adversarial game-playing AI systems.
