@@ -1,4 +1,4 @@
-## Adverserial Sudoku AI
+# Adverserial Sudoku AI
 
 ### The Task
 The task at hand is to build an artificial intelligence player for a two-player competitive version of Sudoku. Unlike traditional Sudoku where we simply fill in numbers to complete a puzzle, this is a game between two players who take turns placing numbers on the board, competing to score the most points. The AI must decide which move to make on each turn, trying to maximize its own score while minimizing the opponent's scoring opportunities.
@@ -123,5 +123,171 @@ The AI performs better as the second player on mid-game positions because it can
 
 ### Conclusion
 Building this Competitive Sudoku AI demonstrates how classical game-playing algorithms combine to solve complex problems. Each technique addresses a specific limitation. Minimax handles adversarial reasoning but is slow. Alpha-beta makes minimax practical but depends on move ordering. Iterative deepening handles time constraints gracefully. Transposition tables eliminate redundant work. Move ordering maximizes pruning efficiency. The evaluation function provides guidance when search must stop.
+
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         FRAMEWORK CALLS                                     │
+│                    compute_best_move(game_state)                            │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         get_legal_moves(game_state)                         │
+│                                                                             │
+│                    Generates all valid moves for current player             │
+│                    Checks C0 constraint (row, column, block uniqueness)     │
+│                    Filters out taboo moves                                  │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         propose_move(first_legal_move)                      │
+│                                                                             │
+│                    Safety net - always have something                       │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         order_moves(game_state, moves)                      │
+│                                                                             │
+│                    Calls calculate_move_score for each move                 │
+│                    Sorts by: TT best move, then score, then region nearness │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         propose_move(best_greedy_move)                      │
+│                                                                             │
+│                    Better than random first move                            │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│                    ITERATIVE DEEPENING LOOP                                 │
+│                    for depth = 1, 2, 3, ... until killed                    │
+│                                                                             │
+│         ┌───────────────────────────────────────────────────────────────┐   │
+│         │                                                               │   │
+│         │              FOR EACH MOVE IN ordered_moves:                  │   │
+│         │                                                               │   │
+│         │                           │                                   │   │
+│         │                           ▼                                   │   │
+│         │         ┌─────────────────────────────────────────┐           │   │
+│         │         │     apply_move(game_state, move)        │           │   │
+│         │         │                                         │           │   │
+│         │         │     Creates new state with move applied │           │   │
+│         │         │     Calculates score using              │           │   │
+│         │         │       calculate_move_score              │           │   │
+│         │         │     Switches current player             │           │   │
+│         │         └──────────────────┬──────────────────────┘           │   │
+│         │                            │                                  │   │
+│         │                            ▼                                  │   │
+│         │         ┌─────────────────────────────────────────┐           │   │
+│         │         │     minimax(new_state, depth-1,         │           │   │
+│         │         │              alpha, beta, is_max)       │           │   │
+│         │         └──────────────────┬──────────────────────┘           │   │
+│         │                            │                                  │   │
+│         └────────────────────────────┼──────────────────────────────────┘   │
+│                                      │                                      │
+│                                      ▼                                      │
+│                         propose_move(best_move_at_this_depth)               │
+│                                                                             │
+└─────────────────────────────────────┬───────────────────────────────────────┘
+                                      │
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│                              MINIMAX FUNCTION                               │
+│         minimax(game_state, depth, alpha, beta, is_maximizing)              │
+│                                                                             │
+│                                    │                                        │
+│                                    ▼                                        │
+│                    ┌───────────────────────────────┐                        │
+│                    │  lookup_tt(game_state, ...)   │                        │
+│                    │                               │                        │
+│                    │  Check transposition table    │                        │
+│                    │  Return cached value if found │                        │
+│                    └───────────────┬───────────────┘                        │
+│                                    │                                        │
+│                                    ▼                                        │
+│                    ┌───────────────────────────────┐                        │
+│                    │  If depth == 0:               │                        │
+│                    │    return evaluate(game_state)│                        │
+│                    └───────────────┬───────────────┘                        │
+│                                    │                                        │
+│                                    ▼                                        │
+│                    ┌───────────────────────────────┐                        │
+│                    │  get_legal_moves(game_state)  │                        │
+│                    │                               │                        │
+│                    │  If no moves:                 │                        │
+│                    │    return evaluate(game_state)│                        │
+│                    └───────────────┬───────────────┘                        │
+│                                    │                                        │
+│                                    ▼                                        │
+│                    ┌───────────────────────────────┐                        │
+│                    │  order_moves(game_state,      │                        │
+│                    │              moves, tt_best)  │                        │
+│                    └───────────────┬───────────────┘                        │
+│                                    │                                        │
+│                                    ▼                                        │
+│                    ┌───────────────────────────────┐                        │
+│                    │  FOR EACH MOVE:               │                        │
+│                    │                               │                        │
+│                    │    apply_move(game_state,     │                        │
+│                    │               move)           │                        │
+│                    │           │                   │                        │
+│                    │           ▼                   │                        │
+│                    │    minimax(new_state,         │◄─── RECURSIVE CALL     │
+│                    │            depth-1, ...)      │                        │
+│                    │           │                   │                        │
+│                    │           ▼                   │                        │
+│                    │    Update alpha or beta       │                        │
+│                    │    Prune if beta <= alpha     │                        │
+│                    │                               │                        │
+│                    └───────────────┬───────────────┘                        │
+│                                    │                                        │
+│                                    ▼                                        │
+│                    ┌───────────────────────────────┐                        │
+│                    │  store_tt(game_state, value,  │                        │
+│                    │           depth, flag, move)  │                        │
+│                    │                               │                        │
+│                    │  Cache result for future use  │                        │
+│                    └───────────────┬───────────────┘                        │
+│                                    │                                        │
+│                                    ▼                                        │
+│                              return best_value                              │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│                           HELPER FUNCTIONS                                  │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  calculate_move_score(board, move)                                  │    │
+│  │                                                                     │    │
+│  │  Counts regions completed by move (0, 1, 2, or 3)                   │    │
+│  │  Returns points (0, 1, 3, or 7)                                     │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  evaluate(game_state, our_player)                                   │    │
+│  │                                                                     │    │
+│  │  Returns heuristic value of position                                │    │
+│  │  Components: score difference + region potential + mobility         │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  compute_hash(game_state)                                           │    │
+│  │                                                                     │    │
+│  │  Creates unique hash for transposition table key                    │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
 
 Understanding these techniques individually and how they interact is essential not just for this assignment but for any game-playing AI. The same principles apply to chess, checkers, Go, and countless other games. The specific details change, but the fundamental ideas of searching game trees, pruning unpromising branches, managing time, and evaluating positions remain constant across all adversarial game-playing AI systems.
